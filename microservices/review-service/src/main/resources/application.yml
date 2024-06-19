@@ -1,0 +1,21 @@
+server:
+  port: 7003
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: review-service
+
+logging:
+  level:
+    root: INFO
+    com.songko: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+server:
+  port: 8080
