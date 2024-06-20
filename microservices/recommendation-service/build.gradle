@@ -7,6 +7,10 @@ plugins {
 group = 'com.songko'
 version = '0.0.1-SNAPSHOT'
 
+ext {
+    mapstructVersion = "1.5.5.Final"
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
@@ -32,6 +36,19 @@ dependencies {
     implementation project(':util')
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    // 내장형 MongoDB를 사용해 제이유닛 테스트를 실행
+    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:4.14.0'
+
+    // 스프링 데이터 엔티티 객체와 API 모델 클래스를 쉽게 상호 변환할 수 있다
+    implementation("org.mapstruct:mapstruct:${mapstructVersion}")
+    // IDE에서 컴파일 타임 생성
+    compileOnly "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    // MapStruct가 컴파일 타임에 애노테이션을 처리해 빈 매핑 구현을 생성
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    testAnnotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'

@@ -2,26 +2,37 @@ package com.songko.reviewservice.services;
 
 import com.songko.api.core.review.Review;
 import com.songko.api.core.review.ReviewService;
+import com.songko.reviewservice.persistence.ReviewEntity;
+import com.songko.reviewservice.persistence.ReviewRepository;
 import com.songko.util.exceptions.InvalidInputException;
 import com.songko.util.http.ServiceUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
+@RequiredArgsConstructor
 @RestController
 public class ReviewServiceImpl implements ReviewService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ReviewServiceImpl.class);
-
+    private final ReviewRepository repository;
+    private final ReviewMapper mapper;
     private final ServiceUtil serviceUtil;
 
-    @Autowired
-    public ReviewServiceImpl(ServiceUtil serviceUtil) {
-        this.serviceUtil = serviceUtil;
+    @Override
+    public Review createReview(Review body) {
+        try {
+            ReviewEntity entity = mapper.dtoToEntity(body);
+            ReviewEntity newEntity = repository.save(entity);
+
+            log.debug("createReview: created a review entity: {}/{}", body.getProductId(), body.getReviewId());
+            return mapper.entityToDto(newEntity);
+
+        } catch (DataIntegrityViolationException dive) {
+            throw new InvalidInputException("Duplicate key, Product Id: " + body.getProductId() + ", Review Id:" + body.getReviewId());
+        }
     }
 
     @Override
@@ -29,18 +40,18 @@ public class ReviewServiceImpl implements ReviewService {
 
         if (productId < 1) throw new InvalidInputException("Invalid productId: " + productId);
 
-        if (productId == 213) {
-            LOG.debug("No reviews found for productId: {}", productId);
-            return  new ArrayList<>();
-        }
+        List<ReviewEntity> entityList = repository.findByProductId(productId);
+        List<Review> list = mapper.entityListToDtoList(entityList);
+        list.forEach(e -> e.setServiceAddress(serviceUtil.getServiceAddress()));
 
-        List<Review> list = new ArrayList<>();
-        list.add(new Review(productId, 1, "Author 1", "Subject 1", "Content 1", serviceUtil.getServiceAddress()));
-        list.add(new Review(productId, 2, "Author 2", "Subject 2", "Content 2", serviceUtil.getServiceAddress()));
-        list.add(new Review(productId, 3, "Author 3", "Subject 3", "Content 3", serviceUtil.getServiceAddress()));
-
-        LOG.debug("/reviews response size: {}", list.size());
+        log.debug("getReviews: response size: {}", list.size());
 
         return list;
+    }
+
+    @Override
+    public void deleteReviews(int productId) {
+        log.debug("deleteReviews: tries to delete reviews for the product with productId: {}", productId);
+        repository.deleteAll(repository.findByProductId(productId));
     }
 }

@@ -6,16 +6,28 @@ server:
 spring:
   application:
     name: review-service
+  datasource:
+    url: jdbc:mysql://localhost/review-db
+    username: user
+    password: pwd
+    hikari:
+      initialization-fail-timeout: 60000
+  jpa:
+    hibernate:
+      ddl-auto: update
 
 logging:
   level:
     root: INFO
     com.songko: DEBUG
-
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 ---
 spring:
   config:
     activate:
       on-profile: docker
+  datasource:
+    url: jdbc:mysql://mysql/review-db
 server:
   port: 8080
