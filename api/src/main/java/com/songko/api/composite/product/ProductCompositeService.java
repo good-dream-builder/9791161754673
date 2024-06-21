@@ -49,7 +49,7 @@ public interface ProductCompositeService {
     @GetMapping(
             value = "/product-composite/{productId}",
             produces = "application/json")
-    ProductAggregate getCompositeProduct(@PathVariable int productId);
+    ProductAggregate getCompositeProduct(@PathVariable("productId") int productId);
 
 
     /**
@@ -67,5 +67,5 @@ public interface ProductCompositeService {
             @ApiResponse(responseCode = "422", description = "Unprocessable entity, input parameters caused the processing to fail. See response message for more information.")
     })
     @DeleteMapping(value = "/product-composite/{productId}")
-    void deleteCompositeProduct(@PathVariable int productId);
+    void deleteCompositeProduct(@PathVariable("productId") int productId);
 }

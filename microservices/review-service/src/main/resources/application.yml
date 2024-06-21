@@ -7,9 +7,9 @@ spring:
   application:
     name: review-service
   datasource:
-    url: jdbc:mysql://localhost/review-db
-    username: user
-    password: pwd
+    url: jdbc:mysql://127.0.0.1:3306/review-db?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=UTC&useSSL=false
+    username: root
+    password: 1111
     hikari:
       initialization-fail-timeout: 60000
   jpa:
@@ -29,5 +29,7 @@ spring:
       on-profile: docker
   datasource:
     url: jdbc:mysql://mysql/review-db
+    username: root
+    password: rootpwd
 server:
   port: 8080

@@ -55,9 +55,9 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
         this.restTemplate = restTemplate;
         this.mapper = mapper;
 
-        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort + "/product/";
-        recommendationServiceUrl = "http://" + recommendationServiceHost + ":" + recommendationServicePort + "/recommendation?productId=";
-        reviewServiceUrl = "http://" + reviewServiceHost + ":" + reviewServicePort + "/review?productId=";
+        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort + "/product";
+        recommendationServiceUrl = "http://" + recommendationServiceHost + ":" + recommendationServicePort + "/recommendation";
+        reviewServiceUrl = "http://" + reviewServiceHost + ":" + reviewServicePort + "/review";
     }
 
     @Override
@@ -65,6 +65,8 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
         try {
             String url = productServiceUrl;
             log.debug("Will post a new product to URL: {}", url);
+
+            log.debug("Show body: {}", body);
 
             Product product = restTemplate.postForObject(url, body, Product.class);
             log.debug("Created a product with id: {}", product.getProductId());

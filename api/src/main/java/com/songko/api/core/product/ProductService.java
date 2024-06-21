@@ -30,7 +30,7 @@ public interface ProductService {
     @GetMapping(
             value = "/product/{productId}",
             produces = "application/json")
-    Product getProduct(@PathVariable int productId);
+    Product getProduct(@PathVariable("productId") int productId);
 
     /**
      * Sample usage:
@@ -40,5 +40,5 @@ public interface ProductService {
      * @param productId
      */
     @DeleteMapping(value = "/product/{productId}")
-    void deleteProduct(@PathVariable int productId);
+    void deleteProduct(@PathVariable("productId") int productId);
 }
