@@ -11,6 +11,7 @@ import com.songko.util.http.ServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -22,36 +23,45 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product createProduct(Product body) {
-        try {
-            ProductEntity entity = mapper.dtoToEntity(body);
-            ProductEntity newEntity = repository.save(entity);
+        if (body.getProductId() < 1) throw new InvalidInputException("Invalid productId: " + body.getProductId());
 
-            log.debug("createProduct: entity created for productId: {}", body.getProductId());
-            return mapper.entityToDto(newEntity);
+        ProductEntity entity = mapper.dtoToEntity(body);
+        Mono<Product> newEntity = repository.save(entity)
+                .log()
+                .onErrorMap(
+                        DuplicateKeyException.class,
+                        ex -> new InvalidInputException("Duplicate key, Product Id: " + body.getProductId()))
+                .map(e -> mapper.entityToDto(e));
 
-        } catch (DuplicateKeyException dke) {
-            throw new InvalidInputException("Duplicate key, Product Id: " + body.getProductId());
-        }
+        return newEntity.block();
     }
 
+    /**
+     * 서비스 요청을 받으면 웹플럭스 프레임워크에 의해 트러거.
+     * 처리에 대한 선언을 하는 것이지, 직접 트리거 하지 않음.
+     *
+     * @param productId
+     * @return Mono 객체 반환.
+     */
     @Override
-    public Product getProduct(int productId) {
+    public Mono<Product> getProduct(int productId) {
         if (productId < 1) throw new InvalidInputException("Invalid productId: " + productId);
 
-        ProductEntity entity = repository.findByProductId(productId)
-                .orElseThrow(() -> new NotFoundException("No product found for productId: " + productId));
-                
-        Product response = mapper.entityToDto(entity);
-        response.setServiceAddress(serviceUtil.getServiceAddress());
-
-        log.debug("getProduct: found productId: {}", response.getProductId());
-
-        return response;
+        return repository.findByProductId(productId)
+                .switchIfEmpty(Mono.error(new NotFoundException("No product found for productId: " + productId)))
+                .log()
+                .map(e -> mapper.entityToDto(e))
+                .map(e -> {
+                    e.setServiceAddress(serviceUtil.getServiceAddress());
+                    return e;
+                });
     }
 
     @Override
     public void deleteProduct(int productId) {
+        if (productId < 1) throw new InvalidInputException("Invalid productId: " + productId);
+
         log.debug("deleteProduct: tries to delete an entity with productId: {}", productId);
-        repository.findByProductId(productId).ifPresent(entity -> repository.delete(entity));
+        repository.findByProductId(productId).log().map(e -> repository.delete(e)).flatMap(e -> e).block();
     }
 }

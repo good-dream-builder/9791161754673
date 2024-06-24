@@ -9,7 +9,7 @@ import org.mapstruct.Mappings;
 
 import java.util.List;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(componentModel = "spring")
 public interface RecommendationMapper {
     @Mappings({
             @Mapping(target = "rate", source = "entity.rating"),

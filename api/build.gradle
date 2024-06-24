@@ -1,31 +1,39 @@
-plugins {
-    id 'java'
-    id 'io.spring.dependency-management' version '1.1.5'
-}
-
-group = 'com.songko'
-version = '0.0.1-SNAPSHOT'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+buildscript {
+    ext {
+        springBootVersion = '2.3.2.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
 }
+
+plugins {
+    id "io.spring.dependency-management" version "1.0.9.RELEASE"
+}
+
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+group = 'se.magnus.microservices.api'
+version = '1.0.0-SNAPSHOT'
+sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springdoc:springdoc-openapi-starter-webflux-api:2.5.0'
-    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.5.0'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
-    compileOnly 'org.projectlombok:lombok'
+    implementation('org.springframework.boot:spring-boot-starter-webflux')
+    implementation('io.springfox:springfox-swagger2:3.0.0')
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
     annotationProcessor 'org.projectlombok:lombok'
 }
 
 dependencyManagement {
-    imports { mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.0") }
+    imports { mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion}") }
 }

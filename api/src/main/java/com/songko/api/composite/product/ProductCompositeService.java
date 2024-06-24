@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 @Tag(name = "ProductCompositeService", description = "REST API for composite product information.")
 public interface ProductCompositeService {
@@ -49,7 +50,7 @@ public interface ProductCompositeService {
     @GetMapping(
             value = "/product-composite/{productId}",
             produces = "application/json")
-    ProductAggregate getCompositeProduct(@PathVariable("productId") int productId);
+    Mono<ProductAggregate> getCompositeProduct(@PathVariable("productId") int productId);
 
 
     /**

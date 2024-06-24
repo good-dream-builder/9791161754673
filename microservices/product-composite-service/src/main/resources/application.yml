@@ -14,20 +14,50 @@ app:
     host: localhost
     port: 7003
 
+spring:
+  cloud:
+    stream:
+      defaultBinder: rabbit
+      default:
+        contentType: application/json
+      bindings:
+        output-products:
+          destination: products
+          producer:
+            required-groups: auditGroup
+        output-recommendations:
+          destination: recommendations
+          producer:
+            required-groups: auditGroup
+        output-reviews:
+          destination: reviews
+          producer:
+            required-groups: auditGroup
+      kafka:
+        binder:
+          brokers: 127.0.0.1
+          defaultBrokerPort: 9092
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+
 logging:
   level:
     root: INFO
     com.songko: DEBUG
 
-springdoc:
-  packages-to-scan: com.songko.productcompositeservice
-  default-consumes-media-type: application/json;charset=UTF-8
-  default-produces-media-type: application/json;charset=UTF-8
-  swagger-ui:
-    path: /swagger-ui.html
-    disable-swagger-default-url: true
-    display-request-duration: true
-    operations-sorter: alpha
+management:
+  endpoints:
+    web:
+      exposure:
+        # UP, DOWN 결과뿐만 아니라 의존성에 대한 정보가 포함된 상태 점검 세부 정보를 표시
+        include: "*"
+  endpoint:
+    health:
+      #  HTTP를 사용해 모든 엔드포인트를 공개
+      show-details: "ALWAYS"
 
 api:
   common:
@@ -37,6 +67,7 @@ api:
     termsOfServiceUrl: MINE TERMS OF SERVICE URL
     license: License
     licenseUrl: MY LICENSE URL
+
     contact:
       name: Contact
       url: My
@@ -44,36 +75,23 @@ api:
 
   product-composite:
     get-composite-product:
-      summary: Returns a composite view of the specified product id
-      description: |
+      description: Returns a composite view of the specified product id
+      notes: |
         # Normal response
         If the requested product id is found the method will return information regarding:
-        1. Base product information
+        1. Product information
         1. Reviews
         1. Recommendations
-        1. Service Addresses\n(technical information regarding the addresses of the microservices that created the response)
+        1. Service Addresses
+        (technical information regarding the addresses of the microservices that created the response)
 
         # Expected partial and error responses
-        In the following cases, only a partial response be created (used to simplify testing of error conditions)
-
-        ## Product id 113
-        200 - Ok, but no recommendations will be returned
-
-        ## Product id 213
-        200 - Ok, but no reviews will be returned
-
-        ## Non numerical product id
-        400 - A <b>Bad Request</b> error will be returned
-
-        ## Product id 13
-        404 - A <b>Not Found</b> error will be returned
-
-        ## Negative product ids
-        422 - An <b>Unprocessable Entity</b> error will be returned
+        1. If no product information is found, a <b>404 - Not Found</b> error will be returned
+        1. In no recommendations or reviews are found for a product, a partial response will be returned
 
     create-composite-product:
-      summary: Creates a composite product
-      description: |
+      description: Creates a composite product
+      notes: |
         # Normal response
         The composite product information posted to the API will be splitted up and stored as separate product-info, recommendation and review entities.
 
@@ -82,20 +100,26 @@ api:
            an <b>422 - Unprocessable Entity</b> error with a "duplicate key" error message will be returned
 
     delete-composite-product:
-      summary: Deletes a product composite
-      description: |
+      description: Deletes a product composite
+      notes: |
         # Normal response
         Entities for product information, recommendations and reviews related to the specificed productId will be deleted.
         The implementation of the delete method is idempotent, i.e. it can be called several times with the same response.
         This means that a delete request of a non existing product will return <b>200 Ok</b>.
 
 ---
-spring:
-  config:
-    activate:
-      on-profile: docker
 server:
   port: 8080
+
+spring:
+  profiles: docker
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: kafka
+  rabbitmq:
+    host: rabbitmq
 
 app:
   product-service:

@@ -10,8 +10,8 @@ import com.songko.util.http.ServiceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -23,34 +23,37 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Override
     public Recommendation createRecommendation(Recommendation body) {
-        try {
-            RecommendationEntity entity = mapper.dtoToEntity(body);
-            RecommendationEntity newEntity = repository.save(entity);
+        if (body.getProductId() < 1) throw new InvalidInputException("Invalid productId: " + body.getProductId());
 
-            log.debug("createRecommendation: created a recommendation entity: {}/{}", body.getProductId(), body.getRecommendationId());
-            return mapper.entityToDto(newEntity);
+        RecommendationEntity entity = mapper.dtoToEntity(body);
+        Mono<Recommendation> newEntity = repository.save(entity)
+                .log()
+                .onErrorMap(
+                        DuplicateKeyException.class,
+                        ex -> new InvalidInputException("Duplicate key, Product Id: " + body.getProductId() + ", Recommendation Id:" + body.getRecommendationId()))
+                .map(e -> mapper.entityToDto(e));
 
-        } catch (DuplicateKeyException dke) {
-            throw new InvalidInputException("Duplicate key, Product Id: " + body.getProductId() + ", Recommendation Id:" + body.getRecommendationId());
-        }
+        return newEntity.block();
     }
 
     @Override
-    public List<Recommendation> getRecommendations(int productId) {
+    public Flux<Recommendation> getRecommendations(int productId) {
         if (productId < 1) throw new InvalidInputException("Invalid productId: " + productId);
 
-        List<RecommendationEntity> entityList = repository.findByProductId(productId);
-        List<Recommendation> list = mapper.entityListToDtoList(entityList);
-        list.forEach(e -> e.setServiceAddress(serviceUtil.getServiceAddress()));
-
-        log.debug("getRecommendations: response size: {}", list.size());
-
-        return list;
+        return repository.findByProductId(productId)
+                .log()
+                .map(e -> mapper.entityToDto(e))
+                .map(e -> {
+                    e.setServiceAddress(serviceUtil.getServiceAddress());
+                    return e;
+                });
     }
 
     @Override
     public void deleteRecommendations(int productId) {
+        if (productId < 1) throw new InvalidInputException("Invalid productId: " + productId);
+
         log.debug("deleteRecommendations: tries to delete recommendations for the product with productId: {}", productId);
-        repository.deleteAll(repository.findByProductId(productId));
+        repository.deleteAll(repository.findByProductId(productId)).block();
     }
 }

@@ -4,11 +4,11 @@ import com.songko.api.composite.product.*;
 import com.songko.api.core.product.Product;
 import com.songko.api.core.recommendation.Recommendation;
 import com.songko.api.core.review.Review;
-import com.songko.util.exceptions.NotFoundException;
 import com.songko.util.http.ServiceUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,32 +55,31 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     }
 
     @Override
-    public ProductAggregate getCompositeProduct(int productId) {
-        log.debug("getCompositeProduct: lookup a product aggregate for productId: {}", productId);
-
-        Product product = integration.getProduct(productId);
-        if (product == null) throw new NotFoundException("No product found for productId: " + productId);
-
-        List<Recommendation> recommendations = integration.getRecommendations(productId);
-
-        List<Review> reviews = integration.getReviews(productId);
-
-        log.debug("getCompositeProduct: aggregate entity found for productId: {}", productId);
-
-        return createProductAggregate(product, recommendations, reviews, serviceUtil.getServiceAddress());
+    public Mono<ProductAggregate> getCompositeProduct(int productId) {
+        return Mono.zip(
+                        values -> createProductAggregate((Product) values[0], (List<Recommendation>) values[1], (List<Review>) values[2], serviceUtil.getServiceAddress()),
+                        integration.getProduct(productId), integration.getRecommendations(productId).collectList(), integration.getReviews(productId).collectList()
+                )
+                .doOnError(ex -> log.warn("getCompositeProduct failed: {}", ex.toString()))
+                .log();
     }
 
     @Override
     public void deleteCompositeProduct(int productId) {
-        log.debug("deleteCompositeProduct: Deletes a product aggregate for productId: {}", productId);
+        try {
 
-        integration.deleteProduct(productId);
+            log.debug("deleteCompositeProduct: Deletes a product aggregate for productId: {}", productId);
 
-        integration.deleteRecommendations(productId);
+            integration.deleteProduct(productId);
+            integration.deleteRecommendations(productId);
+            integration.deleteReviews(productId);
 
-        integration.deleteReviews(productId);
+            log.debug("deleteCompositeProduct: aggregate entities deleted for productId: {}", productId);
 
-        log.debug("getCompositeProduct: aggregate entities deleted for productId: {}", productId);
+        } catch (RuntimeException re) {
+            log.warn("deleteCompositeProduct failed: {}", re.toString());
+            throw re;
+        }
     }
 
     private ProductAggregate createProductAggregate(
