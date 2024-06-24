@@ -15,6 +15,48 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  cloud:
+    stream:
+      defaultBinder: rabbit
+      default:
+        contentType: application/json
+      bindings:
+        input:
+          destination: reviews
+          group: reviewsGroup
+          consumer:
+            maxAttempts: 3
+            backOffInitialInterval: 500
+            backOffMaxInterval: 1000
+            backOffMultiplier: 2.0
+      rabbit:
+        bindings:
+          input:
+            consumer:
+              autoBindDlq: true
+              republishToDlq: true
+      kafka:
+        bindings:
+          input:
+            consumer:
+              enableDlq: true
+        binder:
+          brokers: 127.0.0.1
+          defaultBrokerPort: 9092
+    rabbitmq:
+      host: 127.0.0.1
+      port: 5672
+      username: guest
+      password: guest
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: "*"
 
 logging:
   level:
@@ -23,13 +65,21 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 ---
+server:
+  port: 8080
+
 spring:
-  config:
-    activate:
-      on-profile: docker
+  profiles: docker
   datasource:
     url: jdbc:mysql://mysql/review-db
     username: root
     password: rootpwd
-server:
-  port: 8080
+  rabbitmq:
+    host: rabbitmq
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: kafka
+
+

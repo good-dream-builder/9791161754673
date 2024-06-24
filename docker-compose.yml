@@ -51,7 +51,7 @@ services:
     image: mongo:3.6.9
     mem_limit: 350m
     ports:
-      - "27017:27017"
+      - "27018:27017"
     command: mongod --smallfiles
     healthcheck:
       test: "mongo --eval 'db.stats().ok'"
@@ -64,7 +64,7 @@ services:
     image: mysql:5.7
     mem_limit: 350m
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=rootpwd
       - MYSQL_DATABASE=review-db
