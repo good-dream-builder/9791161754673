@@ -107,6 +107,12 @@ services: # 토픽당 2개의 파티션 사용
     depends_on:
       - kafka
 
+  eureka:
+    build: cloud/eureka
+    mem_limit: 350m
+    ports:
+      - "8761:8761"
+      -
   # $ mongo
   mongodb:
     image: mongo:3.6.9
