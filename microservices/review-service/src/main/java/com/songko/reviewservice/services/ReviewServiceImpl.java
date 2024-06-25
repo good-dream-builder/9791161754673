@@ -49,6 +49,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         log.info("Will get reviews for product with id={}", productId);
 
+        //  스레드 풀의 스레드에서 블로킹 코드를 실행
         return asyncFlux(
                 () -> Flux.fromIterable(getByProductId(productId))
                         .log(null, Level.FINE)
@@ -56,6 +57,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     protected List<Review> getByProductId(int productId) {
+        // 블로킹 코드
         List<ReviewEntity> entityList = repository.findByProductId(productId);
         List<Review> list = mapper.entityListToDtoList(entityList);
         list.forEach(e -> e.setServiceAddress(serviceUtil.getServiceAddress()));

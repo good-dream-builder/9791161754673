@@ -57,7 +57,7 @@ management:
   endpoint:
     health:
       #  HTTP를 사용해 모든 엔드포인트를 공개
-      show-details: "ALWAYS"
+      show-details: always
 
 api:
   common:

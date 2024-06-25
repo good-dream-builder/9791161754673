@@ -56,8 +56,11 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
 
     @Override
     public Mono<ProductAggregate> getCompositeProduct(int productId) {
+        // zip 메서드는 다수의 병렬 요청을 처리. 처리가 완료되면 하나로 압축.
         return Mono.zip(
+                        // 첫 번째 매개 변수 : 배열로 값을 받는 람다 함수
                         values -> createProductAggregate((Product) values[0], (List<Recommendation>) values[1], (List<Review>) values[2], serviceUtil.getServiceAddress()),
+                        // 두 번째 이후 매개 변수 : 병렬로 호출할 요청의 목록. 각 요청은 Mono 객체를 반환.
                         integration.getProduct(productId), integration.getRecommendations(productId).collectList(), integration.getReviews(productId).collectList()
                 )
                 .doOnError(ex -> log.warn("getCompositeProduct failed: {}", ex.toString()))

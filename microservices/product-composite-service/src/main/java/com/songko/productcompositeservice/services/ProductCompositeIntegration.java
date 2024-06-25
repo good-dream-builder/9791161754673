@@ -99,6 +99,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
                 .retrieve()
                 .bodyToMono(Product.class)
                 .log()
+                // HTTP 계층에서 발생한 예외를 자체 예외(예: NotFoundException, InvalidInput Exception)로 변경
                 .onErrorMap(WebClientResponseException.class, ex -> handleException(ex));
     }
 
@@ -124,8 +125,14 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
 
         log.debug("Will call the getRecommendations API on URL: {}", url);
 
+        // product 서비스를 성공적으로 호출하고 review나 recommendation API 호출에 실패했을 때는 전체 요청이 실패한 것으로 처리하지 않는다
         // Return an empty result if something goes wrong to make it possible for the composite service to return partial responses
-        return webClient.get().uri(url).retrieve().bodyToFlux(Recommendation.class).log().onErrorResume(error -> Flux.empty());
+        return webClient.get().uri(url)
+                .retrieve()
+                .bodyToFlux(Recommendation.class)
+                .log()
+                // 예외를 전파하는 대신 가능한 많은 정보를 호출자에게 돌려주고자 onErrorResume(error-> empty()) 메서드를 사용
+                .onErrorResume(error -> Flux.empty());
     }
 
     @Override

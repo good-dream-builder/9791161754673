@@ -52,13 +52,15 @@ logging:
     org.springframework.data.mongodb.core.MongoTemplate: DEBUG
 
 management:
-  endpoint:
-    health:
-      show-details: always
   endpoints:
     web:
       exposure:
+        # UP, DOWN 결과뿐만 아니라 의존성에 대한 정보가 포함된 상태 점검 세부 정보를 표시
         include: "*"
+  endpoint:
+    health:
+      #  HTTP를 사용해 모든 엔드포인트를 공개
+      show-details: always
 
 ---
 server:
