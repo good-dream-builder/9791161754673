@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.health.*;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.reactive.function.client.WebClient;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.service.ApiInfo;
@@ -22,6 +24,15 @@ import java.util.LinkedHashMap;
 @SpringBootApplication
 @ComponentScan("com.songko")
 public class ProductCompositeServiceApplication {
+
+    @Bean
+    @LoadBalanced
+    public WebClient.Builder loadBalancedWebClientBuilder() {
+        final WebClient.Builder builder = WebClient.builder();
+        return builder;
+    }
+
+
     public static void main(String[] args) {
         SpringApplication.run(ProductCompositeServiceApplication.class, args);
     }

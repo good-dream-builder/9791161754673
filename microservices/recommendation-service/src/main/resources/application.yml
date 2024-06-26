@@ -5,7 +5,7 @@ server:
 
 spring:
   application:
-    name: recommendation-service
+    name: recommendation
   data:
     mongodb:
       host: localhost
@@ -51,6 +51,17 @@ logging:
     com.songko: DEBUG
     org.springframework.data.mongodb.core.MongoTemplate: DEBUG
 
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    # 이하 시작 시간과 중지된 마이크로서비스 인스턴스의 등록 해제에 걸리는 시간을 최소화하기 위한 것
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
+
 management:
   endpoints:
     web:
@@ -78,3 +89,8 @@ spring:
       kafka:
         binder:
           brokers: kafka
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka:8761/eureka/

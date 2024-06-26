@@ -13,7 +13,6 @@ import com.songko.util.exceptions.NotFoundException;
 import com.songko.util.http.HttpErrorInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
@@ -33,13 +32,16 @@ import java.io.IOException;
 @EnableBinding(ProductCompositeIntegration.MessageSources.class)
 @Component
 public class ProductCompositeIntegration implements ProductService, RecommendationService, ReviewService {
-    private final WebClient webClient;
+    // URL에 포함된 호스트 이름은 실제 DNS 이름이 아닌,
+    // 마이크로서비스가 유레카 서버에 등록할 때 사용한 가상 호스트 이름.
+    // spring.application.name 속성 값.
+    private final String productServiceUrl = "http://product";
+    private final String recommendationServiceUrl = "http://recommendation";
+    private final String reviewServiceUrl = "http://review";
+
     private final ObjectMapper mapper;
-
-    private final String productServiceUrl;
-    private final String recommendationServiceUrl;
-    private final String reviewServiceUrl;
-
+    private final WebClient.Builder webClientBuilder;
+    private WebClient webClient;
     private MessageSources messageSources;
 
     public interface MessageSources {
@@ -59,26 +61,24 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
 
     @Autowired
     public ProductCompositeIntegration(
-            WebClient.Builder webClient,
+            WebClient.Builder webClientBuilder,
             ObjectMapper mapper,
-            MessageSources messageSources,
-
-            @Value("${app.product-service.host}") String productServiceHost,
-            @Value("${app.product-service.port}") int productServicePort,
-
-            @Value("${app.recommendation-service.host}") String recommendationServiceHost,
-            @Value("${app.recommendation-service.port}") int recommendationServicePort,
-
-            @Value("${app.review-service.host}") String reviewServiceHost,
-            @Value("${app.review-service.port}") int reviewServicePort
+            MessageSources messageSources
     ) {
-        this.webClient = webClient.build();
+        this.webClientBuilder = webClientBuilder;
         this.mapper = mapper;
         this.messageSources = messageSources;
+    }
 
-        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort;
-        recommendationServiceUrl = "http://" + recommendationServiceHost + ":" + recommendationServicePort;
-        reviewServiceUrl = "http://" + reviewServiceHost + ":" + reviewServicePort;
+    /**
+     * ProductCompositeServiceApplication :: loadBalancedWebClientBuilder 는,
+     * 생성자 실행 후 Bean이 생성 되므로, getter를 사용한 늦은 초기화 방식을 사용해야한다.
+     */
+    private WebClient getWebClient() {
+        if (webClient == null) {
+            webClient = webClientBuilder.build();
+        }
+        return webClient;
     }
 
     // about Product
@@ -95,7 +95,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
     public Mono<Product> getProduct(int productId) {
         String url = productServiceUrl + "/product/" + productId;
         log.debug("Will call the getProduct API on URL: {}", url);
-        return webClient.get().uri(url)
+        return getWebClient().get().uri(url)
                 .retrieve()
                 .bodyToMono(Product.class)
                 .log()
@@ -127,7 +127,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
 
         // product 서비스를 성공적으로 호출하고 review나 recommendation API 호출에 실패했을 때는 전체 요청이 실패한 것으로 처리하지 않는다
         // Return an empty result if something goes wrong to make it possible for the composite service to return partial responses
-        return webClient.get().uri(url)
+        return getWebClient().get().uri(url)
                 .retrieve()
                 .bodyToFlux(Recommendation.class)
                 .log()
@@ -137,13 +137,19 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
 
     @Override
     public void deleteRecommendations(int productId) {
-        messageSources.outputRecommendations().send(MessageBuilder.withPayload(new Event(Event.Type.DELETE, productId, null)).build());
+        messageSources.outputRecommendations()
+                .send(MessageBuilder.withPayload(
+                        new Event(Event.Type.DELETE, productId, null)
+                ).build());
     }
 
     // about Review
     @Override
     public Review createReview(Review body) {
-        messageSources.outputReviews().send(MessageBuilder.withPayload(new Event(Event.Type.CREATE, body.getProductId(), body)).build());
+        messageSources.outputReviews()
+                .send(MessageBuilder.withPayload(
+                        new Event(Event.Type.CREATE, body.getProductId(), body)
+                ).build());
         return body;
     }
 
@@ -155,8 +161,9 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
         log.debug("Will call the getReviews API on URL: {}", url);
 
         // Return an empty result if something goes wrong to make it possible for the composite service to return partial responses
-        return webClient.get().uri(url).retrieve().bodyToFlux(Review.class).log().onErrorResume(error -> Flux.empty());
-
+        return getWebClient().get()
+                .uri(url)
+                .retrieve().bodyToFlux(Review.class).log().onErrorResume(error -> Flux.empty());
     }
 
     @Override
@@ -170,7 +177,8 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
     private Mono<Health> getHealth(String url) {
         url += "/actuator/health";
         log.debug("Will call the Health API on URL: {}", url);
-        return webClient.get().uri(url)
+        return getWebClient().get()
+                .uri(url)
                 .retrieve()
                 .bodyToMono(String.class)
                 .map(s -> new Health.Builder().up().build())

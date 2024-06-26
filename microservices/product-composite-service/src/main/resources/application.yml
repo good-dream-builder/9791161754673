@@ -3,18 +3,9 @@ server:
   error:
     include-message: always
 
-app:
-  product-service:
-    host: localhost
-    port: 7001
-  recommendation-service:
-    host: localhost
-    port: 7002
-  review-service:
-    host: localhost
-    port: 7003
-
 spring:
+  application:
+    name: product-composite
   cloud:
     stream:
       defaultBinder: rabbit
@@ -47,6 +38,22 @@ logging:
   level:
     root: INFO
     com.songko: DEBUG
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    # 이하 시작 시간과 중지된 마이크로서비스 인스턴스의 등록 해제에 걸리는 시간을 최소화하기 위한 것
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
+
+# 시작 시간을 최소화하기 위한 것
+ribbon:
+  ServerListRefreshInterval: 5000
+  NFLoadBalancerPingInterval: 5
 
 management:
   endpoints:
@@ -121,13 +128,7 @@ spring:
   rabbitmq:
     host: rabbitmq
 
-app:
-  product-service:
-    host: product
-    port: 8080
-  recommendation-service:
-    host: recommendation
-    port: 8080
-  review-service:
-    host: review
-    port: 8080
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka:8761/eureka/
