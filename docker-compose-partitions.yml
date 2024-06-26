@@ -88,8 +88,6 @@ services:
   product-composite:
     build: microservices/product-composite-service
     mem_limit: 350m
-    ports:
-      - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CLOUD_STREAM_BINDINGS_OUTPUT-PRODUCTS_PRODUCER_PARTITION-KEY-EXPRESSION=payload.key
@@ -107,6 +105,15 @@ services:
     mem_limit: 350m
     ports:
       - "8761:8761"
+
+  # 에지 서버
+  gateway:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    build: cloud/gateway
+    mem_limit: 350m
+    ports:
+      - "8080:8080"
 
   # $ mongo
   mongodb:

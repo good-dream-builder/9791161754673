@@ -6,4 +6,4 @@ include ':microservices:review-service'
 include ':microservices:recommendation-service'
 include ':microservices:product-composite-service'
 include ':cloud:eureka'
-
+include ':cloud:gateway'

@@ -4,7 +4,6 @@ import com.songko.productcompositeservice.services.ProductCompositeIntegration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.actuate.health.*;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
@@ -19,22 +18,23 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 
 @SpringBootApplication
 @ComponentScan("com.songko")
 public class ProductCompositeServiceApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ProductCompositeServiceApplication.class, args);
+    }
+
+    @Autowired
+    ProductCompositeIntegration integration;
 
     @Bean
     @LoadBalanced
     public WebClient.Builder loadBalancedWebClientBuilder() {
         final WebClient.Builder builder = WebClient.builder();
         return builder;
-    }
-
-
-    public static void main(String[] args) {
-        SpringApplication.run(ProductCompositeServiceApplication.class, args);
     }
 
     @Value("${api.common.version}")
@@ -82,27 +82,5 @@ public class ProductCompositeServiceApplication {
                         apiLicenseUrl,
                         Collections.emptyList()
                 ));
-    }
-
-    @Autowired
-    HealthAggregator healthAggregator;
-
-    @Autowired
-    ProductCompositeIntegration integration;
-
-    /**
-     * ProductCompositeIntegration에 정의된 헬퍼 메서드를 사용해 세 가지 핵심 마이크로서비스의 상태 정보를 등록
-     * @return
-     */
-    @Bean
-    ReactiveHealthIndicator coreServices() {
-
-        ReactiveHealthIndicatorRegistry registry = new DefaultReactiveHealthIndicatorRegistry(new LinkedHashMap<>());
-
-        registry.register("product", () -> integration.getProductHealth());
-        registry.register("recommendation", () -> integration.getRecommendationHealth());
-        registry.register("review", () -> integration.getReviewHealth());
-
-        return new CompositeReactiveHealthIndicator(healthAggregator, registry);
     }
 }

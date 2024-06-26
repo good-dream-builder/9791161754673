@@ -38,19 +38,25 @@ services:
   product-composite:
     build: microservices/product-composite-service
     mem_limit: 350m
-    ports:
-      - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       rabbitmq:
         condition: service_healthy
 
+  # 검색 서버
   eureka:
     build: cloud/eureka
     mem_limit: 350m
+  
+  # 에지 서버
+  gateway:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    build: cloud/gateway
+    mem_limit: 350m
     ports:
-      - "8761:8761"
+      - "8080:8080"
 
   # $ mongo
   mongodb:
