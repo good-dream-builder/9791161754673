@@ -171,33 +171,6 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
         messageSources.outputReviews().send(MessageBuilder.withPayload(new Event(Event.Type.DELETE, productId, null)).build());
     }
 
-    // 액추에이터 기반의 health
-    // 엔드포인트는 마이크로서비스와 마이크로서비스가 의존하는 모든 의존성(데이터베이스, 메시징 시스템 등)이 정상인 경우에 UP으로 응답. HTTP 상태 코드 200을 반환.
-    // 그 외 DOWN으로 응답하며, HTTP 상태 코드 500을 반환
-    private Mono<Health> getHealth(String url) {
-        url += "/actuator/health";
-        log.debug("Will call the Health API on URL: {}", url);
-        return getWebClient().get()
-                .uri(url)
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(s -> new Health.Builder().up().build())
-                .onErrorResume(ex -> Mono.just(new Health.Builder().down(ex).build()))
-                .log();
-    }
-
-    public Mono<Health> getProductHealth() {
-        return getHealth(productServiceUrl);
-    }
-
-    public Mono<Health> getRecommendationHealth() {
-        return getHealth(recommendationServiceUrl);
-    }
-
-    public Mono<Health> getReviewHealth() {
-        return getHealth(reviewServiceUrl);
-    }
-
     private Throwable handleException(Throwable ex) {
 
         if (!(ex instanceof WebClientResponseException)) {

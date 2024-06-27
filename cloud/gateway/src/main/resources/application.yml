@@ -1,1 +1,100 @@
-spring.application.name=gateway
+server:
+  port: 8080
+
+app:
+  eureka-server: localhost
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      routes: # Java DSL 규칙으로 작성
+        - id: product-composite # 경로 이름
+          # 넷플릭스 유레카를 통해 product-composite이라는 서비스로 요청이 라우팅
+          #  lb://는 스프링 클라우드 게이트웨이가 로드밸런서를 사용해 검색 서비스에서 대상(목적지)을 찾도록 지시
+          uri: lb://product-composite
+          predicates: # 라우팅 규칙이 처리할 요청
+            - Path=/product-composite/** # ** : 0개 이상의 문자와 일치
+
+        - id: eureka-api
+          uri: http://${app.eureka-server}:8761
+          predicates:
+            - Path=/eureka/api/{segment} # {segment} : 0개 이상의 문자와 일치
+          filters:
+            - SetPath=/eureka/{segment}
+
+        - id: eureka-web-start
+          uri: http://${app.eureka-server}:8761
+          predicates:
+            - Path=/eureka/web
+          filters:
+            - SetPath=/
+
+        - id: eureka-web-other
+          uri: http://${app.eureka-server}:8761
+          predicates:
+            - Path=/eureka/**
+
+        - id: host_route_200
+          uri: http://httpstat.us
+          predicates:
+            - Host=i.feel.lucky:8080
+            - Path=/headerrouting/**
+          filters:
+            - SetPath=/200
+
+        - id: host_route_418
+          uri: http://httpstat.us
+          predicates:
+            - Host=im.a.teapot:8080
+            - Path=/headerrouting/**
+          filters:
+            - SetPath=/418
+
+        - id: host_route_501
+          uri: http://httpstat.us
+          predicates:
+            - Path=/headerrouting/**
+          filters:
+            - SetPath=/501
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${app.eureka-server}:8761/eureka/
+    # 이하 시작 시간과 중지된 마이크로서비스 인스턴스의 등록 해제에 걸리는 시간을 최소화하기 위한 것
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
+
+# 시작 시간을 최소화하기 위한 것
+ribbon:
+  ServerListRefreshInterval: 5000
+  NFLoadBalancerPingInterval: 5
+
+# 스프링 부트 액추에이터 구성
+management:
+  endpoints:
+    web:
+      exposure:
+        # UP, DOWN 결과뿐만 아니라 의존성에 대한 정보가 포함된 상태 점검 세부 정보를 표시
+        include: "*"
+  endpoint:
+    health:
+      #  HTTP를 사용해 모든 엔드포인트를 공개
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: INFO
+    org.springframework.cloud.gateway: TRACE
+
+---
+spring:
+  profiles: docker
+
+app:
+  eureka-server: eureka

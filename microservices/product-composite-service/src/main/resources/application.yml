@@ -3,6 +3,9 @@ server:
   error:
     include-message: always
 
+app:
+  eureka-server: localhost
+
 spring:
   application:
     name: product-composite
@@ -42,7 +45,7 @@ logging:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://${app.eureka-server}:8761/eureka/
     # 이하 시작 시간과 중지된 마이크로서비스 인스턴스의 등록 해제에 걸리는 시간을 최소화하기 위한 것
     initialInstanceInfoReplicationIntervalSeconds: 5
     registryFetchIntervalSeconds: 5
@@ -55,6 +58,7 @@ ribbon:
   ServerListRefreshInterval: 5000
   NFLoadBalancerPingInterval: 5
 
+# 스프링 부트 액추에이터 구성
 management:
   endpoints:
     web:
@@ -118,6 +122,9 @@ api:
 server:
   port: 8080
 
+app:
+  eureka-server: eureka
+
 spring:
   profiles: docker
   cloud:
@@ -127,8 +134,3 @@ spring:
           brokers: kafka
   rabbitmq:
     host: rabbitmq
-
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://eureka:8761/eureka/

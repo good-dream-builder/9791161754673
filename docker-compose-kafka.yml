@@ -125,6 +125,11 @@ services: # 토픽당 2개의 파티션 사용
     ports:
       - "27018:27017"
     command: mongod --smallfiles
+    healthcheck:
+      test: "mongo --eval 'db.stats().ok'"
+      interval: 20s
+      timeout: 5s
+      retries: 10
 
   # $ mysql -uroot -h127.0.0.1 -p
   mysql:
@@ -139,7 +144,7 @@ services: # 토픽당 2개의 파티션 사용
       - MYSQL_PASSWORD=pwd
     healthcheck:
       test: "/usr/bin/mysql --user=user --password=pwd --execute \"SHOW DATABASES;\""
-      interval: 10s
+      interval: 20s
       timeout: 5s
       retries: 10
 
