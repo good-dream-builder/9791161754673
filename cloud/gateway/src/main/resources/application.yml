@@ -1,8 +1,16 @@
 server:
-  port: 8080
+  port: 8443
+  ssl:
+    key-store-type: PKCS12
+    key-store: classpath:keystore/edge.p12
+    key-store-password: password
+    key-alias: localhost
 
 app:
+  eureka-username: u
+  eureka-password: p
   eureka-server: localhost
+  auth-server: localhost
 
 spring:
   application:
@@ -16,6 +24,11 @@ spring:
           uri: lb://product-composite
           predicates: # 라우팅 규칙이 처리할 요청
             - Path=/product-composite/** # ** : 0개 이상의 문자와 일치
+
+        - id: oauth-server
+          uri: lb://auth
+          predicates:
+            - Path=/oauth/**
 
         - id: eureka-api
           uri: http://${app.eureka-server}:8761
@@ -58,10 +71,15 @@ spring:
             - Path=/headerrouting/**
           filters:
             - SetPath=/501
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://${app.auth-server}:9999/.well-known/jwks.json
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://${app.eureka-server}:8761/eureka/
+      defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
     # 이하 시작 시간과 중지된 마이크로서비스 인스턴스의 등록 해제에 걸리는 시간을 최소화하기 위한 것
     initialInstanceInfoReplicationIntervalSeconds: 5
     registryFetchIntervalSeconds: 5
@@ -91,6 +109,7 @@ logging:
     root: INFO
     org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: INFO
     org.springframework.cloud.gateway: TRACE
+    org.springframework.web.server.adapter.HttpWebHandlerAdapter: TRACE
 
 ---
 spring:
@@ -98,3 +117,4 @@ spring:
 
 app:
   eureka-server: eureka
+  auth-server: auth

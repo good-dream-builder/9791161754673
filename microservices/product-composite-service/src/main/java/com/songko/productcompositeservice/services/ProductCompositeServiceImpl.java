@@ -7,15 +7,22 @@ import com.songko.api.core.review.Review;
 import com.songko.util.http.ServiceUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
 public class ProductCompositeServiceImpl implements ProductCompositeService {
+    private final SecurityContext nullSC = new SecurityContextImpl();
     private final ServiceUtil serviceUtil;
     private ProductCompositeIntegration integration;
 
@@ -26,8 +33,15 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     }
 
     @Override
-    public void createCompositeProduct(ProductAggregate body) {
+    public Mono<Void> createCompositeProduct(ProductAggregate body) {
+        return ReactiveSecurityContextHolder.getContext()
+                .doOnSuccess(sc -> internalCreateCompositeProduct(sc, body)).then();
+    }
+
+    public void internalCreateCompositeProduct(SecurityContext sc, ProductAggregate body) {
         try {
+            logAuthorizationInfo(sc);
+
             log.debug("createCompositeProduct: creates a new composite entity for productId: {}", body.getProductId());
 
             Product product = new Product(body.getProductId(), body.getName(), body.getWeight(), null);
@@ -59,18 +73,31 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
         // zip 메서드는 다수의 병렬 요청을 처리. 처리가 완료되면 하나로 압축.
         return Mono.zip(
                         // 첫 번째 매개 변수 : 배열로 값을 받는 람다 함수
-                        values -> createProductAggregate((Product) values[0], (List<Recommendation>) values[1], (List<Review>) values[2], serviceUtil.getServiceAddress()),
+                        values -> createProductAggregate(
+                                (SecurityContext) values[0],
+                                (Product) values[1],
+                                (List<Recommendation>) values[2],
+                                (List<Review>) values[3],
+                                serviceUtil.getServiceAddress()),
                         // 두 번째 이후 매개 변수 : 병렬로 호출할 요청의 목록. 각 요청은 Mono 객체를 반환.
-                        integration.getProduct(productId), integration.getRecommendations(productId).collectList(), integration.getReviews(productId).collectList()
+                        ReactiveSecurityContextHolder.getContext().defaultIfEmpty(nullSC),
+                        integration.getProduct(productId),
+                        integration.getRecommendations(productId).collectList(),
+                        integration.getReviews(productId).collectList()
                 )
                 .doOnError(ex -> log.warn("getCompositeProduct failed: {}", ex.toString()))
                 .log();
     }
 
     @Override
-    public void deleteCompositeProduct(int productId) {
-        try {
+    public Mono<Void> deleteCompositeProduct(int productId) {
+        return ReactiveSecurityContextHolder.getContext()
+                .doOnSuccess(sc -> internalDeleteCompositeProduct(sc, productId)).then();
+    }
 
+    public void internalDeleteCompositeProduct(SecurityContext sc, int productId) {
+        try {
+            logAuthorizationInfo(sc);
             log.debug("deleteCompositeProduct: Deletes a product aggregate for productId: {}", productId);
 
             integration.deleteProduct(productId);
@@ -86,7 +113,8 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     }
 
     private ProductAggregate createProductAggregate(
-            Product product, List<Recommendation> recommendations, List<Review> reviews, String serviceAddress) {
+            SecurityContext sc, Product product, List<Recommendation> recommendations, List<Review> reviews, String serviceAddress) {
+        logAuthorizationInfo(sc);
 
         // 1. Setup product info
         int productId = product.getProductId();
@@ -113,4 +141,34 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
 
         return new ProductAggregate(productId, name, weight, recommendationSummaries, reviewSummaries, serviceAddresses);
     }
+
+    private void logAuthorizationInfo(SecurityContext sc) {
+        if (sc != null && sc.getAuthentication() != null && sc.getAuthentication() instanceof JwtAuthenticationToken) {
+            Jwt jwt = ((JwtAuthenticationToken) sc.getAuthentication()).getToken();
+            logAuthorizationInfo(jwt);
+        } else {
+            log.warn("No JWT based Authentication supplied, running tests are we?");
+        }
+    }
+
+    /**
+     * API를 호출할 때마다 관련된 JWT 접근 토큰을 기록
+     * @param jwt
+     */
+    private void logAuthorizationInfo(Jwt jwt) {
+        if (jwt == null) {
+            log.warn("No JWT supplied, running tests are we?");
+        } else {
+            if (log.isDebugEnabled()) {
+                URL issuer = jwt.getIssuer();
+                List<String> audience = jwt.getAudience();
+                Object subject = jwt.getClaims().get("sub");
+                Object scopes = jwt.getClaims().get("scope");
+                Object expires = jwt.getClaims().get("exp");
+
+                log.debug("Authorization info: Subject: {}, scopes: {}, expires {}: issuer: {}, audience: {}", subject, scopes, expires, issuer, audience);
+            }
+        }
+    }
+
 }

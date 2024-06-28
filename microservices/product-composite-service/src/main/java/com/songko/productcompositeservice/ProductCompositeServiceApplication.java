@@ -27,9 +27,6 @@ public class ProductCompositeServiceApplication {
         SpringApplication.run(ProductCompositeServiceApplication.class, args);
     }
 
-    @Autowired
-    ProductCompositeIntegration integration;
-
     @Bean
     @LoadBalanced
     public WebClient.Builder loadBalancedWebClientBuilder() {

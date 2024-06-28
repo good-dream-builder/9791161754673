@@ -4,7 +4,10 @@ server:
     include-message: always
 
 app:
+  eureka-username: u
+  eureka-password: p
   eureka-server: localhost
+  auth-server: localhost
 
 spring:
   application:
@@ -36,16 +39,22 @@ spring:
     port: 5672
     username: guest
     password: guest
+  security:
+    oauth2:
+      resourceserver:
+        jwt: # 권한 부여 서버의 jwk-set 엔드포인트
+          jwk-set-uri: http://${app.auth-server}:9999/.well-known/jwks.json
 
 logging:
   level:
     root: INFO
     com.songko: DEBUG
+    org.springframework.web.server.adapter.HttpWebHandlerAdapter: TRACE
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://${app.eureka-server}:8761/eureka/
+      defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
     # 이하 시작 시간과 중지된 마이크로서비스 인스턴스의 등록 해제에 걸리는 시간을 최소화하기 위한 것
     initialInstanceInfoReplicationIntervalSeconds: 5
     registryFetchIntervalSeconds: 5
@@ -124,6 +133,7 @@ server:
 
 app:
   eureka-server: eureka
+  auth-server: auth
 
 spring:
   profiles: docker

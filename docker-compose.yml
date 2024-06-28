@@ -55,8 +55,15 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     build: cloud/gateway
     mem_limit: 350m
-    ports:
-      - "8080:8080"
+    ports: # https
+      - "8443:8443"
+  
+  # 인증 서버
+  auth:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    build: cloud/auth
+    mem_limit: 350m
 
   # $ mongo
   mongodb:
