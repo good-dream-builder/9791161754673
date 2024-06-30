@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
@@ -24,6 +26,7 @@ import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -98,25 +101,25 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
         // @formatter:off
         clients.inMemory()
                 .withClient("reader")
-                    .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
-                    .redirectUris("http://my.redirect.uri")
-                    .secret("{noop}secret")
-                    .scopes("product:read")
-                    .accessTokenValiditySeconds(600_000_000)
-                    .and()
+                .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
+                .redirectUris("http://my.redirect.uri")
+                .secret("{noop}secret")
+                .scopes("product:read")
+                .accessTokenValiditySeconds(600_000_000)
+                .and()
                 .withClient("writer")
-                    .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
-                    .redirectUris("http://my.redirect.uri")
-                    .secret("{noop}secret")
-                    .scopes("product:read", "product:write")
-                    .accessTokenValiditySeconds(600_000_000)
-                    .and()
+                .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
+                .redirectUris("http://my.redirect.uri")
+                .secret("{noop}secret")
+                .scopes("product:read", "product:write")
+                .accessTokenValiditySeconds(600_000_000)
+                .and()
                 .withClient("noscopes")
-                    .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
-                    .redirectUris("http://my.redirect.uri")
-                    .secret("{noop}secret")
-                    .scopes("none")
-                    .accessTokenValiditySeconds(600_000_000);
+                .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
+                .redirectUris("http://my.redirect.uri")
+                .secret("{noop}secret")
+                .scopes("none")
+                .accessTokenValiditySeconds(600_000_000);
         // @formatter:on
     }
 
@@ -127,7 +130,7 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
                 .authenticationManager(this.authenticationManager)
                 .tokenStore(tokenStore());
 
-        if(this.jwtEnable) {
+        if (this.jwtEnable) {
             endpoints
                     .accessTokenConverter(accessTokenConverter());
         }
@@ -155,12 +158,24 @@ class UserConfig extends WebSecurityConfigurerAdapter {
                         request -> "/introspect".equals(request.getRequestURI())
                 );
     }
+
+    @Bean
+    @Override
+    protected UserDetailsService userDetailsService() {
+        return new InMemoryUserDetailsManager(
+                User.withDefaultPasswordEncoder()
+                        .username("songko")
+                        .password("password")
+                        .roles("USER")
+                        .build()
+        );
+    }
 }
 
 /**
  * Legacy Authorization Server (spring-security-oauth2) does not support any
  * Token Introspection endpoint.
- *
+ * <p>
  * This class adds ad-hoc support in order to better support the other samples in the repo.
  */
 @FrameworkEndpoint
@@ -176,7 +191,7 @@ class IntrospectEndpoint {
     public Map<String, Object> introspect(@RequestParam("token") String token) {
         OAuth2AccessToken accessToken = this.tokenStore.readAccessToken(token);
         Map<String, Object> attributes = new HashMap<>();
-        if(accessToken == null || accessToken.isExpired()) {
+        if (accessToken == null || accessToken.isExpired()) {
             attributes.put("active", false);
             return attributes;
         }
@@ -195,7 +210,7 @@ class IntrospectEndpoint {
 /**
  * Legacy Authorization Server (spring-security-oauth2) does not support any
  * <a href target="_blank" href="https://tools.ietf.org/html/rfc7517#section-5">JWK Set</a> endpoint.
- *
+ * <p>
  * This class adds ad-hoc support in order to better support the other samples in the repo.
  */
 @FrameworkEndpoint
