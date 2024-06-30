@@ -1,0 +1,92 @@
+server:
+  port: 7001
+  error:
+    include-message: always
+
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: product-db
+  cloud:
+    stream:
+      defaultBinder: rabbit
+      default:
+        contentType: application/json
+      bindings:
+        input:
+          destination: products
+          group: productsGroup # 소비자 그룹 : 마이크로서비스 인스턴스 중 한 인스턴스로만 product 토픽에 게시된 메시지를 전달
+          consumer:
+            maxAttempts: 3 # 데드 레터 대기열로 메시지를 옮기기 전에 재시도 세 번 수행
+            backOffInitialInterval: 500 # 첫 번째 재시도 : 500ms 후에 실행
+            backOffMaxInterval: 1000 # 나머지 두 번의 재시도는 1000ms 후에 실행
+            backOffMultiplier: 2.0
+      rabbit:
+        bindings:
+          input:
+            consumer:
+              autoBindDlq: true
+              republishToDlq: true
+      kafka:
+        bindings:
+          input:
+            consumer:
+              enableDlq: true
+logging:
+  level:
+    root: INFO
+    se.magnus: DEBUG
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+
+---
+server:
+  port: 8080
+
+spring:
+  profiles: docker
+  data:
+    mongodb:
+      host: mongodb
+
+---
+spring:
+  profiles: streaming_partitioned
+  cloud:
+    stream:
+      bindings:
+        input:
+          consumer:
+            partitioned: true
+            instanceCount: 2
+---
+spring:
+  profiles: streaming_instance_0
+  cloud:
+    stream:
+      bindings:
+        input:
+          consumer:
+            instanceIndex: 0
+---
+spring:
+  profiles: streaming_instance_1
+  cloud:
+    stream:
+      bindings:
+        input:
+          consumer:
+            instanceIndex: 1
+---
+spring:
+  profiles: kafka
+  cloud:
+    stream:
+      defaultBinder: kafka
+
+management:
+  health:
+    rabbit:
+      enabled: false
+

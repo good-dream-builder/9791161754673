@@ -1,0 +1,59 @@
+app:
+  eureka-username: u
+  eureka-password: '{cipher}bf298f6d5f878b342f9e44bec08cb9ac00b4ce57e98316f030194a225fac89fb'
+  eureka-server: localhost
+  auth-server: localhost
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
+    # 이하 시작 시간과 중지된 마이크로서비스 인스턴스의 등록 해제에 걸리는 시간을 최소화하기 위한 것
+    initialInstanceInfoReplicationIntervalSeconds: 5
+    registryFetchIntervalSeconds: 5
+  instance:
+    leaseRenewalIntervalInSeconds: 5
+    leaseExpirationDurationInSeconds: 5
+
+spring:
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: 127.0.0.1
+          defaultBrokerPort: 9092
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: '{cipher}17fcf0ae5b8c5cf87de6875b699be4a1746dd493a99d926c7a26a68c422117ef'
+
+# WARNING: Exposing all management endpoints over http should only be used during development, must be locked down in production!
+# 스프링 부트 액추에이터 구성
+management:
+  endpoints:
+    web:
+      exposure:
+        # UP, DOWN 결과뿐만 아니라 의존성에 대한 정보가 포함된 상태 점검 세부 정보를 표시
+        include: "*"
+  endpoint:
+    health:
+      #  HTTP를 사용해 모든 엔드포인트를 공개
+      show-details: always
+
+---
+app:
+  eureka-server: eureka
+  auth-server: auth
+
+spring:
+  profiles: docker
+  rabbitmq:
+    host: rabbitmq
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: kafka
+
+

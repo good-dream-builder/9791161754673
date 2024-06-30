@@ -1,4 +1,5 @@
-server.port: 9999
+server:
+  port: 9999
 
 app:
   eureka-username: u
