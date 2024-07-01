@@ -89,8 +89,8 @@ services:
 #      # HTTP 기본 인증
 #      - SPRING_SECURITY_USER_NAME=${CONFIG_SERVER_USR}
 #      - SPRING_SECURITY_USER_PASSWORD=${CONFIG_SERVER_PWD}
-    volumes: # /config-repo에 접근하면 config-repo 폴더에 접근
-      - $PWD/config-repo:/config-repo
+#    volumes: # /config-repo에 접근하면 config-repo 폴더에 접근
+#      - $PWD/config-repo:/config-repo
     build: cloud/config
     mem_limit: 350m
 

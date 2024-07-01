@@ -54,6 +54,8 @@ spring:
   profiles: docker
   datasource:
     url: jdbc:mysql://mysql/review-db
+    username: root
+    password: rootpwd
 ---
 # 메시지 브로커에서 파티션을 사용하기 위한 속성
 spring:

@@ -2,11 +2,14 @@ server:
   port: 8888
 
 spring:
+  profiles:
+    active:
+    - native
   cloud:
     config:
       server:
         native:
-          search-locations: file:${PWD}/config-repo
+          search-locations: classpath:/config-repo
 
 # WARNING: Exposing all management endpoints over http should only be used during development, must be locked down in production!
 # 스프링 부트 액추에이터 구성
@@ -31,4 +34,4 @@ spring:
     config:
       server:
         native:
-          search-locations: file:/config-repo # 구성 저장소의 위치를 지정
+          search-locations: classpath:/config-repo # 구성 저장소의 위치를 지정
