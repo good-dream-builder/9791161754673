@@ -1,18 +1,8 @@
 server:
   port: 8443
-  ssl:
-    key-store-type: PKCS12
-    key-store: classpath:keystore/edge.p12
-    key-store-password: password
-    key-alias: localhost
 
 app:
   config-server: localhost
-
-# 시작 시간을 최소화하기 위한 것
-ribbon:
-  ServerListRefreshInterval: 5000
-  NFLoadBalancerPingInterval: 5
 
 spring:
   cloud:
@@ -24,12 +14,14 @@ spring:
           uri: lb://product-composite
           predicates: # 라우팅 규칙이 처리할 요청
             - Path=/product-composite/** # ** : 0개 이상의 문자와 일치
+        
+        # 인증 서버
+#        - id: oauth-server
+#          uri: lb://auth
+#          predicates:
+#            - Path=/oauth/**
 
-        - id: oauth-server
-          uri: lb://auth
-          predicates:
-            - Path=/oauth/**
-
+        # 검색 서버
         - id: eureka-api
           uri: http://${app.eureka-server}:8761
           predicates:
@@ -48,12 +40,13 @@ spring:
           uri: http://${app.eureka-server}:8761
           predicates:
             - Path=/eureka/**
-
+        
+        # 구성서버
         - id: config-server
           uri: http://${app.config-server}:8888
           predicates:
             - Path=/config/**
-          filters:
+          filters: # RewritePath 필터 : URL에서 /config의 앞 부분을 제거한 후 구성 서버로 보낸다
             - RewritePath=/config/(?<segment>.*), /$\{segment}
 
         - id: host_route_200
@@ -78,11 +71,11 @@ spring:
             - Path=/headerrouting/**
           filters:
             - SetPath=/501
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://${app.auth-server}:9999/.well-known/jwks.json
+
+# 시작 시간을 최소화하기 위한 것
+ribbon:
+  ServerListRefreshInterval: 5000
+  NFLoadBalancerPingInterval: 5
 
 logging:
   level:

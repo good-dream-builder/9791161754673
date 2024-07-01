@@ -101,13 +101,13 @@ services: # 토픽당 2개의 파티션 사용
       - "8443:8443"
 
   # 인증 서버
-  auth:
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
-      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
-    build: cloud/auth
-    mem_limit: 350m
+#  auth:
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#      - CONFIG_SERVER_USR=${CONFIG_SERVER_USR}
+#      - CONFIG_SERVER_PWD=${CONFIG_SERVER_PWD}
+#    build: cloud/auth
+#    mem_limit: 350m
   
   # 설정 서버
   config:

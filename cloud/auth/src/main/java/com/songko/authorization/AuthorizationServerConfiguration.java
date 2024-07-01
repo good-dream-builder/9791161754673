@@ -60,27 +60,6 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
     KeyPair keyPair;
     boolean jwtEnable;
 
-    @Bean
-    public JwtAccessTokenConverter accessTokenConverter() {
-        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
-        converter.setKeyPair(this.keyPair);
-
-        DefaultAccessTokenConverter accessTokenConverter = new DefaultAccessTokenConverter();
-        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
-        converter.setAccessTokenConverter(accessTokenConverter);
-
-        return converter;
-    }
-
-    @Bean
-    public TokenStore tokenStore() {
-        if (this.jwtEnable) {
-            return new JwtTokenStore(accessTokenConverter());
-        } else {
-            return new InMemoryTokenStore();
-        }
-    }
-
     public AuthorizationServerConfiguration(
             AuthenticationConfiguration authenticationConfiguration,
             KeyPair keyPair,
@@ -101,25 +80,25 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
         // @formatter:off
         clients.inMemory()
                 .withClient("reader")
-                .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
-                .redirectUris("http://my.redirect.uri")
-                .secret("{noop}secret")
-                .scopes("product:read")
-                .accessTokenValiditySeconds(600_000_000)
-                .and()
+                    .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
+                    .redirectUris("http://my.redirect.uri")
+                    .secret("{noop}secret")
+                    .scopes("product:read")
+                    .accessTokenValiditySeconds(600_000_000)
+                    .and()
                 .withClient("writer")
-                .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
-                .redirectUris("http://my.redirect.uri")
-                .secret("{noop}secret")
-                .scopes("product:read", "product:write")
-                .accessTokenValiditySeconds(600_000_000)
-                .and()
+                    .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
+                    .redirectUris("http://my.redirect.uri")
+                    .secret("{noop}secret")
+                    .scopes("product:read", "product:write")
+                    .accessTokenValiditySeconds(600_000_000)
+                    .and()
                 .withClient("noscopes")
-                .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
-                .redirectUris("http://my.redirect.uri")
-                .secret("{noop}secret")
-                .scopes("none")
-                .accessTokenValiditySeconds(600_000_000);
+                    .authorizedGrantTypes("code", "authorization_code", "implicit", "password")
+                    .redirectUris("http://my.redirect.uri")
+                    .secret("{noop}secret")
+                    .scopes("none")
+                    .accessTokenValiditySeconds(600_000_000);
         // @formatter:on
     }
 
@@ -136,6 +115,27 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
         }
         // @format
     }
+
+    @Bean
+    public TokenStore tokenStore() {
+        if (this.jwtEnable) {
+            return new JwtTokenStore(accessTokenConverter());
+        } else {
+            return new InMemoryTokenStore();
+        }
+    }
+
+    @Bean
+    public JwtAccessTokenConverter accessTokenConverter() {
+        JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
+        converter.setKeyPair(this.keyPair);
+
+        DefaultAccessTokenConverter accessTokenConverter = new DefaultAccessTokenConverter();
+        accessTokenConverter.setUserTokenConverter(new SubjectAttributeUserTokenConverter());
+        converter.setAccessTokenConverter(accessTokenConverter);
+
+        return converter;
+    }
 }
 
 
@@ -148,10 +148,10 @@ class UserConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/actuator/**").permitAll()
-                .mvcMatchers("/.well-known/jwks.json").permitAll()
-                .anyRequest().authenticated()
-                .and()
+                    .antMatchers("/actuator/**").permitAll()
+                    .mvcMatchers("/.well-known/jwks.json").permitAll()
+                    .anyRequest().authenticated()
+                    .and()
                 .httpBasic()
                 .and()
                 .csrf().ignoringRequestMatchers(

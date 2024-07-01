@@ -4,8 +4,6 @@ server:
     include-message: always
 
 spring:
-  application:
-    name: recommendation
   data:
     mongodb:
       host: localhost
@@ -54,6 +52,7 @@ spring:
       host: mongodb
 
 ---
+# 메시지 브로커에서 파티션을 사용하기 위한 속성
 spring:
   profiles: streaming_partitioned
   cloud:
@@ -63,8 +62,8 @@ spring:
           consumer:
             partitioned: true
             instanceCount: 2
-
 ---
+# 첫 번째 파티션에서 메시지를 소비하기 위한 속성
 spring:
   profiles: streaming_instance_0
   cloud:
@@ -74,6 +73,7 @@ spring:
           consumer:
             instanceIndex: 0
 ---
+# 두 번째 파티션에서 메시지를 소비하기 위한 속성
 spring:
   profiles: streaming_instance_1
   cloud:
@@ -83,6 +83,7 @@ spring:
           consumer:
             instanceIndex: 1
 ---
+# 카프카를 메시징 브로커로 사용하기 위한 속성
 spring:
   profiles: kafka
   cloud:
@@ -93,4 +94,3 @@ management:
   health:
     rabbit:
       enabled: false
-

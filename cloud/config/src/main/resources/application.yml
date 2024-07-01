@@ -1,1 +1,34 @@
-spring.application.name=config
+server:
+  port: 8888
+
+spring:
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: file:${PWD}/config-repo
+
+# WARNING: Exposing all management endpoints over http should only be used during development, must be locked down in production!
+# 스프링 부트 액추에이터 구성
+management:
+  endpoints:
+    web:
+      exposure:
+        # UP, DOWN 결과뿐만 아니라 의존성에 대한 정보가 포함된 상태 점검 세부 정보를 표시
+        include: "*"
+  endpoint:
+    health:
+      #  HTTP를 사용해 모든 엔드포인트를 공개
+      show-details: always
+
+logging:
+  level:
+    root: info
+---
+spring:
+  profiles: docker
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: file:/config-repo # 구성 저장소의 위치를 지정

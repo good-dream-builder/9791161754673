@@ -3,27 +3,30 @@ server:
   error:
     include-message: always
 
-spring.cloud.stream:
-  defaultBinder: rabbit
-  default.contentType: application/json
-  bindings:
-    output-products:
-      destination: products
-      producer:
-        required-groups: auditGroup
-    output-recommendations:
-      destination: recommendations
-      producer:
-        required-groups: auditGroup
-    output-reviews:
-      destination: reviews
-      producer:
-        required-groups: auditGroup
-  security:
-    oauth2:
-      resourceserver:
-        jwt: # 권한 부여 서버의 jwk-set 엔드포인트
-          jwk-set-uri: http://${app.auth-server}:9999/.well-known/jwks.json
+spring:
+  cloud:
+    stream:
+      defaultBinder: rabbit
+      default:
+        contentType: application/json
+      bindings:
+        output-products:
+          destination: products
+          producer:
+            required-groups: auditGroup
+        output-recommendations:
+          destination: recommendations
+          producer:
+            required-groups: auditGroup
+        output-reviews:
+          destination: reviews
+          producer:
+            required-groups: auditGroup
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt: # 권한 부여 서버의 jwk-set 엔드포인트
+#          jwk-set-uri: http://${app.auth-server}:9999/.well-known/jwks.json
 
 logging:
   level:
